@@ -1,0 +1,21 @@
+appName: "dynamic-env-openfeign-open-feign-test-source"
+
+replicaCount: 1
+
+extraLabels:
+  virtual-env: dev
+
+image:
+  repository: host.docker.internal:5000/mirror/dynamic-env-openfeign
+  tag: v1
+  pullPolicy: IfNotPresent
+
+httpPort: 80
+
+extraEnvs:
+  - name: server_port
+    value: "80"
+  - name: spring_application_name
+    value: "open-feign-test-source"
+  - name: spring_cloud_nacos_discovery_ip
+    value: "open-feign-test-source"

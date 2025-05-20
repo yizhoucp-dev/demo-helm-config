@@ -1,0 +1,25 @@
+appName: "dynamic-env-demo"
+
+replicaCount: 1
+
+extraLabels:
+  virtual-env: dev
+
+image:
+  repository: host.docker.internal:5000/dynamic-env-demo
+  tag: v1
+  pullPolicy: IfNotPresent
+
+httpPort: 80
+
+extraEnvs:
+  - name: server_port
+    value: "80"
+  - name: spring_kafka_bootstrap_servers
+    value: "kafka-headless.kafka.svc.cluster.local:9092"
+  - name: spring_kafka_consumer_group-id
+    value: "1"
+
+
+podProbeEnabled: true
+healthCheckPath: /api/cur-env

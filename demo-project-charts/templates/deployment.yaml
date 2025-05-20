@@ -1,0 +1,101 @@
+{{- $replicaCount := int .Values.replicaCount }}
+{{- $virtual_env := include "python.virtualEnv" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "python.fullname" . }}
+  labels:
+    {{- include "python.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default "2" }}
+  {{- if and (not .Values.autoscaling.enabled) (ne $replicaCount 1) }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- if .Values.minReadySeconds }}
+  minReadySeconds: {{ .Values.minReadySeconds | default "5" }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "python.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "python.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 2
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - "{{ .Release.Name }}"
+              topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: python
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: envMark
+              value: "{{ $virtual_env }}"
+            {{- if .Values.extraEnvs }}
+            {{ toYaml .Values.extraEnvs | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort }}
+              protocol: TCP
+        {{- if .Values.podProbeOverride }}
+          {{- with .Values.podProbeOverride }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+        {{- else if .Values.podProbeEnabled }}
+          livenessProbe:
+            initialDelaySeconds: 180
+            failureThreshold: 5
+            periodSeconds: 10
+            httpGet:
+              path: {{ .Values.healthCheckPath }}
+              port: http
+          readinessProbe:
+            failureThreshold: 3
+            periodSeconds: 5
+            httpGet:
+              path: {{ .Values.healthCheckPath }}
+              port: http
+        {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+{{- if .Values.envFrom }}
+          envFrom:
+  {{- with .Values.envFrom }}
+    {{- toYaml . | nindent 12 }}
+  {{- end }}
+{{- end }}

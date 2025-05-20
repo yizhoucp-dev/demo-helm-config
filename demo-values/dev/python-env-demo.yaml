@@ -1,0 +1,26 @@
+appName: "python-env-demo"
+
+replicaCount: 1
+
+extraLabels:
+  virtual-env: dev
+
+image:
+  repository: host.docker.internal:5000/python-env-demo
+  tag: v1
+  pullPolicy: IfNotPresent
+
+httpPort: 80
+
+extraEnvs:
+  - name: FLASK_ENV 
+    value: "dev"
+  - name: env
+    value: "dev"
+  - name: FLASK_PORT
+    value: "80"
+  - name: KAKFA_HOST
+    value: "kafka-headless.kafka.svc.cluster.local:9092"
+
+podProbeEnabled: true
+healthCheckPath: /api/v1/health

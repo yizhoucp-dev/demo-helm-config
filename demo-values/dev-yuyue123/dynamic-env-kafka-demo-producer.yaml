@@ -1,0 +1,25 @@
+appName: "dynamic-env-kafka-demo-producer"
+
+replicaCount: 1
+
+extraLabels:
+  virtual-env: dev-yuyue123
+
+image:
+  repository: host.docker.internal:5000/mirror/dynamic-env-kafka-demo
+  tag: producer
+  pullPolicy: IfNotPresent
+
+httpPort: 80
+
+extraEnvs:
+  - name: server_port
+    value: "80"
+  - name: spring_kafka_bootstrap-servers
+    value: "kafka-headless.kafka.svc.cluster.local:9092"
+  - name: spring_redis_database
+    value: "1"
+
+podProbeEnabled: true
+
+healthCheckPath: /api/dynamic/kafka/heart/registration-heart-beat

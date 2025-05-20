@@ -1,0 +1,22 @@
+{{- $virtual_env := include "python.virtualEnv" . -}}
+{{- if regexMatch "^dev$|^test$" (index .Values.extraLabels "virtual-env") -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "python.fullname" . }}
+  annotations:
+    kt-virtual-environment/gateways: gateway-{{ .Values.appName }}
+    kt-virtual-environment/hosts: {{ .Values.appName }}-api-{{ $virtual_env }}.myrightone.com
+    kt-virtual-environment/rule: '{"Match":[{"Uri":{"Prefix":"/"}}],"corsPolicy":{"allowOrigin":["*"],"allowCredentials":true,"allowHeaders":["*"],"allowMethods":["GET","POST","PUT","DELETE","PATCH","OPTIONS"]}}'
+  labels:
+    {{- include "python.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    deployment: {{ .Values.appName }}
+{{- end }}
