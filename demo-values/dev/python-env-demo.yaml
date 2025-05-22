@@ -6,7 +6,7 @@ extraLabels:
   virtual-env: dev
 
 image:
-  repository: host.docker.internal:5000/python-env-demo
+  repository: host.docker.internal:5000/mirror/python-env-demo
   tag: v1
   pullPolicy: IfNotPresent
 
